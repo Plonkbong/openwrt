@@ -28,7 +28,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=Boot Loaders
 	TITLE:=U-Boot for Arcadyan VGV952CJW33
 	MENU:=1
-	DEPENDS:=@TARGET_ifxmips||TARGET_ifxcpe||TARGET_ltqcpe||TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir
+	DEPENDS:=@TARGET_ifxmips||TARGET_ifxcpe||TARGET_ltqcpe||TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_DEVICE_arcadyan_vgv952cjw33-e-ir-vpe||TARGET_lantiq_xrx200_DEVICE_arcadyan_vgv952cjw33-e-ir-smp
 	URL:=http://www.denx.de/wiki/UBoot/WebHome
 endef
 
@@ -52,7 +52,15 @@ endef
 #define Build/Configure
 #endef
 
-ifdef CONFIG_TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir
+ifdef CONFIG_TARGET_lantiq_xrx200
+UBOOT_PLATFORM:=vr9
+endif
+
+ifdef CONFIG_TARGET_lantiq_xrx200_DEVICE_arcadyan_vgv952cjw33-e-ir-vpe
+UBOOT_PLATFORM:=vr9
+endif
+
+ifdef CONFIG_TARGET_lantiq_xrx200_DEVICE_arcadyan_vgv952cjw33-e-ir-smp
 UBOOT_PLATFORM:=vr9
 endif
 

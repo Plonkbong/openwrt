@@ -17,7 +17,7 @@ config LANTIQ_UBOOT_ar9
 config LANTIQ_UBOOT_vr9
     bool
 	default y
-	depends on ( TARGET_ltqcpe_platform_vr9 || TARGET_ifxcpe_platform_vr9 || TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir )
+	depends on ( TARGET_ltqcpe_platform_vr9 || TARGET_ifxcpe_platform_vr9 || TARGET_lantiq_xrx200 || TARGET_lantiq_xrx200_DEVICE_arcadyan_vgv952cjw33-e-ir-vpe || TARGET_lantiq_xrx200_DEVICE_arcadyan_vgv952cjw33-e-ir-smp )
 			
 config LANTIQ_UBOOT_ar10
     bool
