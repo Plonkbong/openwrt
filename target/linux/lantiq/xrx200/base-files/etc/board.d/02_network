@@ -56,6 +56,10 @@ lantiq_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 		;;
+	avm,fritz3390)
+		ucidef_add_switch "switch0" \
+			"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "5:lan:5" "6t@eth0"
+		;;
 	bt,homehub-v5a)
 		ucidef_add_switch "switch0" \
 			"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "5:wan:5" "6t@eth0"
@@ -98,6 +102,7 @@ lantiq_setup_dsl()
 	arcadyan,vgv952cjw33-e-ir-vpe|\
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
+	avm,fritz3390|\
 	avm,fritz7360sl|\
 	avm,fritz7362sl|\
 	avm,fritz7412)
@@ -151,12 +156,13 @@ lantiq_setup_macs()
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
-	avm,fritz7360sl)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
-		;;
+	avm,fritz3390|\
 	avm,fritz7362sl)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macdsl -i $(find_mtd_part "tffs (1)"))
+		;;
+	avm,fritz7360sl)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 		;;
 	avm,fritz7412)
 		tffsdev=$(find_mtd_chardev "nand-tffs")
