@@ -11,6 +11,7 @@ platform_do_upgrade() {
 	case "$board" in
 	arcadyan,vgv952cjw33-e-ir-smp|\
 	arcadyan,vgv952cjw33-e-ir-vpe|\
+	arcadyan,vgv953akw22|\
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz7362sl|\
