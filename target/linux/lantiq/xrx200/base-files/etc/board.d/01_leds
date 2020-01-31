@@ -34,8 +34,9 @@ case "$board" in
 arcadyan,arv7519rw22)
 	ucidef_set_led_netdev "lan" "lan" "arv7519rw22:green:lan" "eth0.1"
 	;;
-arcadyan,vgv7510kw22-nor|\
-arcadyan,vgv7510kw22-brn)
+arcadyan,vgv7510kw22-brn|\
+arcadyan,vgv7510kw22-nor-smp|\
+arcadyan,vgv7510kw22-nor-vpe)
 	ucidef_set_led_wlan "wifi" "wifi" "vgv7510kw22:green:wlan" "phy0radio"
 	;;
 arcadyan,vgv7519-nor|\

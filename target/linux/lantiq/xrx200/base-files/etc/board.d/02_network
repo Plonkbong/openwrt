@@ -25,7 +25,8 @@ lantiq_setup_interfaces()
 			"2:lan:2" "4:lan:1" "6t@eth0"
 		;;
 	arcadyan,vgv7510kw22-brn|\
-	arcadyan,vgv7510kw22-nor)
+	arcadyan,vgv7510kw22-nor-smp|\
+	arcadyan,vgv7510kw22-nor-vpe)
 		ucidef_add_switch "switch0" \
 			"2:lan:2" "3:lan:1" "4:lan:4" "5:lan:3" "0:wan:5" "6t@eth0"
 		;;
@@ -86,7 +87,8 @@ lantiq_setup_dsl()
 
 	case "$board" in
 	arcadyan,vgv7510kw22-brn|\
-	arcadyan,vgv7510kw22-nor|\
+	arcadyan,vgv7510kw22-nor-smp|\
+	arcadyan,vgv7510kw22-nor-vpe|\
 	arcadyan,vgv952cjw33-e-ir-smp|\
 	arcadyan,vgv952cjw33-e-ir-vpe|\
 	avm,fritz3370-rev2-hynix|\
@@ -124,7 +126,8 @@ lantiq_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	arcadyan,vgv7510kw22-brn|\
-	arcadyan,vgv7510kw22-nor)
+	arcadyan,vgv7510kw22-nor-smp|\
+	arcadyan,vgv7510kw22-nor-vpe)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 0x16)" 2)
 		;;
 	arcadyan,vgv7519-brn|\
