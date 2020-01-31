@@ -297,19 +297,19 @@ endef
 define U-Boot/vgv7510kw22_brn
   NAME:=Arcadyan VGV7510KW22 (BRN)
   BUILD_SUBTARGET:=xrx200
-  BUILD_DEVICES:=arcadyan_vgv7510kw22-nor
+  BUILD_DEVICES:=arcadyan_vgv7510kw22-brn arcadyan_vgv7510kw22-nor-smp arcadyan_vgv7510kw22-nor-vpe
 endef
 
 define U-Boot/vgv7510kw22_nor
   NAME:=Arcadyan VGV7510KW22 (NOR)
   BUILD_SUBTARGET:=xrx200
-  BUILD_DEVICES:=arcadyan_vgv7510kw22-nor
+  BUILD_DEVICES:=arcadyan_vgv7510kw22-brn arcadyan_vgv7510kw22-nor-smp arcadyan_vgv7510kw22-nor-vpe
 endef
 
 define U-Boot/vgv7510kw22_ram
   NAME:=Arcadyan VGV7510KW22 (RAM)
   BUILD_SUBTARGET:=xrx200
-  BUILD_DEVICES:=arcadyan_vgv7510kw22-nor
+  BUILD_DEVICES:=arcadyan_vgv7510kw22-brn arcadyan_vgv7510kw22-nor-smp arcadyan_vgv7510kw22-nor-vpe
   DDR_SETTINGS:=board/arcadyan/vgv7510kw22/ddr_settings.h
 endef
 
