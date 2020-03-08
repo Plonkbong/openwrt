@@ -130,19 +130,30 @@ define Device/arcadyan_vgv952cjw33-e-ir-smp
   DEVICE_PACKAGES := kmod-usb-dwc2 wpad-basic
 endef
 TARGET_DEVICES += arcadyan_vgv952cjw33-e-ir-smp
-define Device/arcadyan_vgv953akw22
+
+define Device/arcadyan_vgv953akw22-b-23
   $(Device/NAND)
   DEVICE_VENDOR := Arcadyan
-  DEVICE_MODEL := VGV953AKW22
-  DEVICE_VARIANT := NAND
+  DEVICE_MODEL := VGV953AKW22-B-23
   DEVICE_ALT0_VENDOR := Telekom
   DEVICE_ALT0_MODEL := Speedport W 921V
-  BOARD_NAME := VGV953AKW22
-  SOC := vr9
-  DEVICE_PACKAGES := kmod-usb-dwc2
-  SUPPORTED_DEVICES += VGV953AKW22
 endef
-TARGET_DEVICES += arcadyan_vgv953akw22
+
+define Device/arcadyan_vgv953akw22-b-23-smp
+  $(Device/arcadyan_vgv953akw22-b-23)
+  DEVICE_VARIANT := SMP
+  DEVICE_ALT0_VARIANT := SMP
+  DEVICE_PACKAGES := kmod-usb-dwc2
+endef
+TARGET_DEVICES += arcadyan_vgv953akw22-b-23-smp
+
+define Device/arcadyan_vgv953akw22-b-23-vpe
+  $(Device/arcadyan_vgv953akw22-b-23)
+  DEVICE_VARIANT := VPE
+  DEVICE_ALT0_VARIANT := VPE
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc
+endef
+TARGET_DEVICES += arcadyan_vgv953akw22-b-23-vpe
 
 define Device/avm_fritz3370
   $(Device/AVM)
