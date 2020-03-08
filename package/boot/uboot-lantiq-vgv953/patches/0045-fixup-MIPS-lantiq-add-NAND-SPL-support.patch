@@ -1,0 +1,22 @@
+From 8416167e7f76978899ff3642b84c7512a4e0cc05 Mon Sep 17 00:00:00 2001
+From: Antonios Vamporakis <ant@area128.com>
+Date: Fri, 3 Jan 2014 16:52:05 +0100
+Subject: fixup! MIPS: lantiq: add NAND SPL support
+
+
+diff --git a/arch/mips/cpu/mips32/lantiq-common/spl.c b/arch/mips/cpu/mips32/lantiq-common/spl.c
+index 3d9d4d4..bb4c417 100644
+--- a/arch/mips/cpu/mips32/lantiq-common/spl.c
++++ b/arch/mips/cpu/mips32/lantiq-common/spl.c
+@@ -241,7 +241,7 @@ static int spl_uncompress_lzo(struct spl_image *spl, unsigned long loadaddr)
+ 	int ret;
+ 
+ 	spl_puts("SPL: decompressing U-Boot with LZO\n");
+-
++	loadaddr += 64; // skip the U-Boot header
+ 	ret = lzop_decompress(
+ 		(const unsigned char*) loadaddr, spl->data_size,
+ 		(unsigned char *) spl->entry_addr, &len);
+-- 
+2.7.4
+

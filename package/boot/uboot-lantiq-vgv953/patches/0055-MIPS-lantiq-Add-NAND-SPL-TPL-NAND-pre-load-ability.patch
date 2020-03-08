@@ -1,0 +1,309 @@
+From 9b048cb3576845e9d46ce2743075882e862f2c36 Mon Sep 17 00:00:00 2001
+From: Antonios Vamporakis <ant@area128.com>
+Date: Sun, 5 Jan 2014 02:57:13 +0100
+Subject: MIPS: lantiq: Add NAND SPL/TPL (NAND pre-load) ability
+
+Adding support for a small preloader that fits in the first page of
+the NAND chip. The first NAND page is read by the SoC on boot and
+the code in there loads additional pages which contain SPL. SPL in
+this case becomes TPL which in turn loads U-Boot.
+
+Signed-off-by: Antonios Vamporakis <ant@area128.com>
+
+diff --git a/Makefile b/Makefile
+index aa4267c..4ebef7d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -617,6 +617,31 @@ $(obj)u-boot.ltq.lzma.nandspl: $(obj)u-boot.lzma.img $(obj)spl/u-boot-spl.bin
+ 			-p $(CONFIG_SYS_NAND_PAGE_SIZE) \
+ 			-s $(obj)spl/u-boot-spl.bin -u $< -o $@
+ 
++$(obj)u-boot.ltq.nandtpl: $(obj)spl/u-boot-spl.bin $(obj)u-boot.img
++		$(MAKE) -C $(SRCTREE)/arch/mips/cpu/mips32/lantiq-common \
++			$(OBJTREE)/nand_preload.ltq
++		$(obj)tools/ltq-boot-image -t nandspl -e $(CONFIG_TPL_TEXT_BASE) \
++			-x $(CONFIG_SYS_NAND_PAGE_SIZE) \
++			-p $(CONFIG_SYS_NAND_PAGE_SIZE) \
++			-s $(OBJTREE)/nand_preload.ltq -u $< -o $@
++		$(call SPL_PAD_APPEND,$@,$(obj)u-boot.img,u-boot-tpl-pad.bin,$(CONFIG_SYS_NAND_U_BOOT_OFFS))
++
++$(obj)u-boot.ltq.lzo.nandtpl: $(obj)spl/u-boot-spl.bin $(obj)u-boot.lzo.img
++		$(MAKE) -C $(SRCTREE)/arch/mips/cpu/mips32/lantiq-common \
++			$(OBJTREE)/nand_preload.ltq
++		$(obj)tools/ltq-boot-image -t nandspl -e $(CONFIG_TPL_TEXT_BASE) \
++			-x $(CONFIG_SYS_NAND_PAGE_SIZE) \
++			-p $(CONFIG_SYS_NAND_PAGE_SIZE) \
++			-s $(OBJTREE)/nand_preload.ltq -u $< -o $@
++		$(call SPL_PAD_APPEND,$@,$(obj)u-boot.lzo.img,u-boot-tpl-pad.bin,$(CONFIG_SYS_NAND_U_BOOT_OFFS))
++
++$(obj)u-boot.ltq.lzma.nandtpl: $(obj)spl/u-boot-spl.bin $(obj)u-boot.lzma.img
++		$(obj)tools/ltq-boot-image -t nandspl -e $(CONFIG_TPL_TEXT_BASE) \
++			-x $(CONFIG_SYS_NAND_PAGE_SIZE) \
++			-p $(CONFIG_SYS_NAND_PAGE_SIZE) \
++			-s $(OBJTREE)/nand_preload.ltq -u $< -o $@
++		$(call SPL_PAD_APPEND,$@,$(obj)u-boot.lzma.img,u-boot-tpl-pad.bin,$(CONFIG_SYS_NAND_U_BOOT_OFFS))
++
+ $(obj)u-boot.ltq.norspl: $(obj)u-boot.img $(obj)spl/u-boot-spl.bin
+ 	cat $(obj)spl/u-boot-spl.bin $< > $@
+ 
+diff --git a/arch/mips/cpu/mips32/lantiq-common/Makefile b/arch/mips/cpu/mips32/lantiq-common/Makefile
+index 260d67c..f17c727 100644
+--- a/arch/mips/cpu/mips32/lantiq-common/Makefile
++++ b/arch/mips/cpu/mips32/lantiq-common/Makefile
+@@ -24,6 +24,13 @@ all:	$(LIB)
+ $(LIB):	$(obj).depend $(OBJS)
+ 	$(call cmd_link_o_target, $(OBJS))
+ 
++
++PRELOAD = nandpreload.o
++PRELOAD	:= $(addprefix $(obj),$(PRELOAD))
++
++$(OBJTREE)/nand_preload.ltq: $(PRELOAD)
++	$(OBJCOPY) -O binary $(PRELOAD) $@
++
+ #########################################################################
+ 
+ # defines $(obj).depend target
+diff --git a/arch/mips/cpu/mips32/lantiq-common/nandpreload.c b/arch/mips/cpu/mips32/lantiq-common/nandpreload.c
+new file mode 100644
+index 0000000..149c9e5
+--- /dev/null
++++ b/arch/mips/cpu/mips32/lantiq-common/nandpreload.c
+@@ -0,0 +1,135 @@
++/*
++ * Copyright (C) 2003 Wolfgang Denk Engineering, <wd@denx.de>
++ * Copyright (C) 2014 Antonios Vamporakis, <ant@area128.com>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <asm/arch/soc.h>
++#include <asm/lantiq/io.h>
++
++#define FILE_SIZE 		CONFIG_SYS_NAND_U_BOOT_OFFS
++#define STARTING_ADDRESS	CONFIG_SPL_TEXT_BASE
++#define PAGE_SIZE		CONFIG_SYS_NAND_PAGE_SIZE
++#define NAND_SIZE		(CONFIG_SYS_NAND_SIZE >> 20) /* in MB */
++
++/* NAND controller control */
++#define LTQ_EBU_NAND_CON	(LTQ_EBU_NAND_BASE | KSEG1)
++/* NAND Flash Device RD/BY State */
++#define LTQ_EBU_NAND_WAIT	((LTQ_EBU_NAND_BASE | KSEG1) + 0x04)
++
++#define NAND_CON_ECC_ON		(1 << 31)
++#define NAND_CON_LATCH_PRE	(1 << 23)
++#define NAND_CON_LATCH_WP	(1 << 22)
++#define NAND_CON_LATCH_SE	(1 << 21)
++#define NAND_CON_LATCH_CS	(1 << 20)
++#define NAND_CON_LATCH_CLE	(1 << 19)
++#define NAND_CON_LATCH_ALE	(1 << 18)
++#define NAND_CON_OUT_CS1	(1 << 10)
++#define NAND_CON_IN_CS1		(1 << 8)
++#define NAND_CON_PRE_P		(1 << 7)
++#define NAND_CON_WP_P		(1 << 6)
++#define NAND_CON_SE_P		(1 << 5)
++#define NAND_CON_CS_P		(1 << 4)
++#define NAND_CON_CLE_P		(1 << 3)
++#define NAND_CON_ALE_P		(1 << 2)
++#define NAND_CON_CSMUX		(1 << 1)
++#define NAND_CON_NANDM		(1 << 0)
++
++#define NAND_WAIT_WR_C		(1 << 3)
++#define NAND_WAIT_RDBY		(1 << 0)
++#define NAND_READY		(ltq_readl(LTQ_EBU_NAND_WAIT) & NAND_WAIT_RDBY)
++
++#define NAND_CMD_ALE		(1 << 2)
++#define NAND_CMD_CLE		(1 << 3)
++#define NAND_CMD_CS		(1 << 4)
++#define NAND_CMD_SE		(1 << 5)
++#define NAND_CMD_WP		(1 << 6)
++#define NAND_CMD_PRE		(1 << 7)
++
++#define NAND_WRITE_CMD		(NAND_CMD_CS | NAND_CMD_CLE)
++#define NAND_WRITE_ADDR		(NAND_CMD_CS | NAND_CMD_ALE)
++#define NAND_READ_DATA		(NAND_CMD_CS)
++
++#define NAND_BASE		CONFIG_SYS_NAND_BASE
++#define NAND_WRITE(addr, val)	ltq_writeb(NAND_BASE | (addr), val); \
++					while((ltq_readl(LTQ_EBU_NAND_WAIT) & NAND_WAIT_WR_C) == 0);
++
++#define NAND_READ(addr, val)	val = ltq_readb(NAND_BASE | (addr))
++
++static void read_page(u32 page_addr, u32 dest_addr)
++{
++	int i;
++	u8 *tmp;
++	u8 col_addr_num;
++	u8 page_addr_num;
++
++	if (PAGE_SIZE <= 0x200) {
++		col_addr_num = 1;
++		
++		if (NAND_SIZE < 32) {
++			page_addr_num = 2;
++		} else {
++			page_addr_num = 3;
++		}
++	} else {
++		col_addr_num = 2;
++		
++		if (NAND_SIZE < 128){
++			page_addr_num = 2;
++		} else {
++			page_addr_num = 3;
++		}
++	}
++
++	NAND_WRITE(NAND_WRITE_CMD, 0);
++	ltq_setbits(LTQ_EBU_NAND_CON, NAND_CON_LATCH_ALE);
++
++	for (i = 0; i < col_addr_num; i++) {
++		NAND_WRITE(NAND_WRITE_ADDR, 0);
++	}
++
++	for (i = 0; i < page_addr_num; i++) {
++		NAND_WRITE(NAND_WRITE_ADDR, (u8)((page_addr >> (i * 8)) & 0xff));
++	}
++
++	ltq_clrbits(LTQ_EBU_NAND_CON, NAND_CON_LATCH_ALE);
++
++	if (PAGE_SIZE > 0x200) {
++		NAND_WRITE(NAND_WRITE_CMD, 0x30);
++	}
++
++	while (!NAND_READY) {}
++
++	/* Read page */
++	tmp = (u8*) dest_addr;
++	for (i = 0; i < PAGE_SIZE; i++) {
++		NAND_READ(NAND_READ_DATA, *tmp++);
++	}
++
++	while (!NAND_READY) {}
++}
++
++void main(void)
++{
++	int i;
++
++	ltq_writel(LTQ_EBU_NAND_CON, NAND_CON_OUT_CS1 | NAND_CON_IN_CS1 |
++		NAND_CON_PRE_P | NAND_CON_WP_P | NAND_CON_SE_P |
++		NAND_CON_CS_P | NAND_CON_CSMUX | NAND_CON_LATCH_PRE |
++		NAND_CON_LATCH_WP | NAND_CON_LATCH_SE | NAND_CON_LATCH_CS |
++		NAND_CON_LATCH_ALE | NAND_CON_NANDM);
++
++	for (i = 0; i < (FILE_SIZE / PAGE_SIZE + 1); i++) {
++		read_page(i + 1, STARTING_ADDRESS + (PAGE_SIZE * i));
++	}
++
++	ltq_clrbits(LTQ_EBU_NAND_CON, NAND_CON_LATCH_CS);
++	
++	// jump start
++	void (*start)(void);
++
++	start = (void *)STARTING_ADDRESS;
++	start();
++}
+diff --git a/arch/mips/cpu/mips32/lantiq-common/spl.c b/arch/mips/cpu/mips32/lantiq-common/spl.c
+index bb4c417..5911e9f 100644
+--- a/arch/mips/cpu/mips32/lantiq-common/spl.c
++++ b/arch/mips/cpu/mips32/lantiq-common/spl.c
+@@ -64,7 +64,8 @@
+ #define spl_boot_nor_flash	0
+ #endif
+ 
+-#if defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH) && defined(CONFIG_SYS_BOOT_NANDSPL)
++#if defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH) && \
++	(defined(CONFIG_SYS_BOOT_NANDSPL) || defined(CONFIG_SYS_BOOT_NANDTPL))
+ #define spl_boot_nand_flash	1
+ #else
+ #define spl_boot_nand_flash	0
+@@ -241,6 +242,7 @@ static int spl_uncompress_lzo(struct spl_image *spl, unsigned long loadaddr)
+ 	int ret;
+ 
+ 	spl_puts("SPL: decompressing U-Boot with LZO\n");
++
+ 	loadaddr += 64; // skip the U-Boot header
+ 	ret = lzop_decompress(
+ 		(const unsigned char*) loadaddr, spl->data_size,
+diff --git a/arch/mips/cpu/mips32/vrx200/config.mk b/arch/mips/cpu/mips32/vrx200/config.mk
+index b0fc882..e895fab 100644
+--- a/arch/mips/cpu/mips32/vrx200/config.mk
++++ b/arch/mips/cpu/mips32/vrx200/config.mk
+@@ -32,4 +32,9 @@ ALL-y += $(obj)u-boot.ltq.nandspl
+ ALL-$(CONFIG_SPL_LZO_SUPPORT) += $(obj)u-boot.ltq.lzo.nandspl
+ ALL-$(CONFIG_SPL_LZMA_SUPPORT) += $(obj)u-boot.ltq.lzma.nandspl
+ endif
++ifdef CONFIG_SYS_BOOT_NANDTPL
++ALL-y += $(obj)u-boot.ltq.nandtpl
++ALL-$(CONFIG_SPL_LZO_SUPPORT) += $(obj)u-boot.ltq.lzo.nandtpl
++ALL-$(CONFIG_SPL_LZMA_SUPPORT) += $(obj)u-boot.ltq.lzma.nandtpl
++endif
+ endif
+diff --git a/arch/mips/include/asm/arch-vrx200/config.h b/arch/mips/include/asm/arch-vrx200/config.h
+index 4ec6092..08da4b8 100644
+--- a/arch/mips/include/asm/arch-vrx200/config.h
++++ b/arch/mips/include/asm/arch-vrx200/config.h
+@@ -164,7 +164,7 @@
+ #define CONFIG_SYS_TEXT_BASE		0xB0000000
+ #endif
+ 
+-#if defined(CONFIG_SYS_BOOT_SFSPL) || defined(CONFIG_SYS_BOOT_NANDSPL)
++#if defined(CONFIG_SYS_BOOT_SFSPL)
+ #define CONFIG_SYS_TEXT_BASE		0x80100000
+ #define CONFIG_SPL_TEXT_BASE		0xBE220000
+ #endif
+@@ -179,6 +179,23 @@
+ #define CONFIG_XWAY_SWAP_BYTES
+ #endif
+ 
++#if defined(CONFIG_SYS_BOOT_NANDTPL)
++#define CONFIG_SYS_TEXT_BASE		0x80100000
++#define CONFIG_TPL_TEXT_BASE		0xBE220000
++/*
++ * CONFIG_SPL_TEXT_BASE should be set to
++ * (CONFIG_TPL_TEXT_BASE + CONFIG_SYS_NAND_PAGE_SIZE)
++ * but ld can't do math on input parameters so allow
++ * an overwrite and complain if the value is wrong
++ */
++#if !defined(CONFIG_SPL_TEXT_BASE)
++#define CONFIG_SPL_TEXT_BASE		0xBE220800
++#endif
++#if CONFIG_TPL_TEXT_BASE + CONFIG_SYS_NAND_PAGE_SIZE != CONFIG_SPL_TEXT_BASE
++#error CONFIG_SPL_TEXT_BASE != CONFIG_TPL_TEXT_BASE + CONFIG_SYS_NAND_PAGE_SIZE
++#endif
++#endif
++
+ #define	CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_TEXT_BASE
+ 
+ #endif /* __VRX200_CONFIG_H__ */
+diff --git a/arch/mips/include/asm/lantiq/config.h b/arch/mips/include/asm/lantiq/config.h
+index 483cc94..bcc7b61 100644
+--- a/arch/mips/include/asm/lantiq/config.h
++++ b/arch/mips/include/asm/lantiq/config.h
+@@ -44,7 +44,8 @@
+  * NAND flash SPL
+  * BOOT CFG 06 only (address cycle based probing, 2KB or 512B page size)
+  */
+-#if defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH) && defined(CONFIG_SYS_BOOT_NANDSPL)
++#if defined(CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH) && \
++	(defined(CONFIG_SYS_BOOT_NANDSPL) || defined(CONFIG_SYS_BOOT_NANDTPL))
+ #define CONFIG_SPL
+ #define CONFIG_SPL_NAND_SUPPORT
+ #define CONFIG_SPL_NAND_DRIVERS
+@@ -177,7 +178,10 @@
+ #define CONFIG_ENV_LOAD_UBOOT_NAND						\
+ 	"load-uboot-nandspl=tftpboot u-boot.ltq.nandspl\0"			\
+ 	"load-uboot-nandspl-lzo=tftpboot u-boot.ltq.lzo.nandspl\0"		\
+-	"load-uboot-nandspl-lzma=tftpboot u-boot.ltq.lzma.nandspl\0"
++	"load-uboot-nandspl-lzma=tftpboot u-boot.ltq.lzma.nandspl\0"		\
++	"load-uboot-nandtpl=tftpboot u-boot.ltq.nandtpl\0"			\
++	"load-uboot-nandtpl-lzo=tftpboot u-boot.ltq.lzo.nandtpl\0"		\
++	"load-uboot-nandtpl-lzma=tftpboot u-boot.ltq.lzma.nandtpl\0"
+ #else
+ #define CONFIG_ENV_WRITE_UBOOT_NAND
+ #define CONFIG_ENV_LOAD_UBOOT_NAND
+-- 
+2.7.4
+

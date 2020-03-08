@@ -1,0 +1,23 @@
+From 4959ba02633b89896525aaaf6a22d11cfbcd6865 Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Thu, 9 Jan 2014 00:55:38 +0100
+Subject: fixup! net: switchlib: add driver for Atheros AR8216
+
+Signed-off-by: Luka Perkov <luka@openwrt.org>
+
+diff --git a/drivers/net/switch/ar8216.c b/drivers/net/switch/ar8216.c
+index f1348f0..bbfa415 100644
+--- a/drivers/net/switch/ar8216.c
++++ b/drivers/net/switch/ar8216.c
+@@ -106,7 +106,7 @@ static struct switch_driver ar8216_drv = {
+ 
+ void switch_ar8216_init(void)
+ {
+-	/* for archs with manual relocation */
++	/* For archs with manual relocation */
+ 	ar8216_drv.probe = ar8216_probe;
+ 	ar8216_drv.setup = ar8216_setup;
+ 
+-- 
+2.7.4
+

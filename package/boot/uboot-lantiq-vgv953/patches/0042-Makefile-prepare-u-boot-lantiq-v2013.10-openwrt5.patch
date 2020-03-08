@@ -1,0 +1,23 @@
+From 9fff3484aa25c33cad82a11df2701c74dc877c48 Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Sun, 20 Oct 2013 19:39:17 +0200
+Subject: Makefile: prepare u-boot-lantiq-v2013.10-openwrt5
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+
+diff --git a/Makefile b/Makefile
+index 0445035..aa4267c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -8,7 +8,7 @@
+ VERSION = 2013
+ PATCHLEVEL = 10
+ SUBLEVEL =
+-EXTRAVERSION =
++EXTRAVERSION = -openwrt5
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+-- 
+2.7.4
+

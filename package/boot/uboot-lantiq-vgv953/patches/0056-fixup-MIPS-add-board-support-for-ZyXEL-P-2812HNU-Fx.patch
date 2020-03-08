@@ -1,0 +1,55 @@
+From 0b78b5c67b19eaf77bb640ca3b320e2b973ec8dd Mon Sep 17 00:00:00 2001
+From: Antonios Vamporakis <ant@area128.com>
+Date: Thu, 9 Jan 2014 01:21:50 +0100
+Subject: fixup! MIPS: add board support for ZyXEL P-2812HNU-Fx
+
+Use nandtpl in order to actually boot from NAND flash.
+
+Signed-off-by: Antonios Vamporakis <ant@area128.com>
+
+diff --git a/boards.cfg b/boards.cfg
+index b72e706..e7f3396 100644
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -556,7 +556,7 @@ Active  mips        mips32         vrx200      lantiq          easy80920
+ Active  mips        mips32         vrx200      zte             zxhnh367n           zxhnh367n_nandspl                    zxhnh367n:SYS_BOOT_NANDSPL                                                                                                        Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         vrx200      zte             zxhnh367n           zxhnh367n_ram                        zxhnh367n:SYS_BOOT_RAM                                                                                                            Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         vrx200      zte             zxhnh367n           zxhnh367n_zte                        zxhnh367n:SYS_BOOT_ZTE                                                                                                            Luka Perkov <luka@openwrt.org>
+-Active  mips        mips32         vrx200      zyxel           p2812hnufx          p2812hnufx_nandspl                   p2812hnufx:SYS_BOOT_NANDSPL                                                                                                       Luka Perkov <luka@openwrt.org>
++Active  mips        mips32         vrx200      zyxel           p2812hnufx          p2812hnufx_nandtpl                   p2812hnufx:SYS_BOOT_NANDTPL                                                                                                       Luka Perkov <luka@openwrt.org>
+ Active  mips        mips32         vrx200      zyxel           p2812hnufx          p2812hnufx_ram                       p2812hnufx:SYS_BOOT_RAM                                                                                                           Luka Perkov <luka@openwrt.org>
+ Active  mips        mips64         -           -               qemu-mips           qemu_mips64                          qemu-mips64:SYS_BIG_ENDIAN                                                                                                        -
+ Active  mips        mips64         -           -               qemu-mips           qemu_mips64el                        qemu-mips64:SYS_LITTLE_ENDIAN                                                                                                     -
+diff --git a/include/configs/p2812hnufx.h b/include/configs/p2812hnufx.h
+index 7e25ece..30a7402 100644
+--- a/include/configs/p2812hnufx.h
++++ b/include/configs/p2812hnufx.h
+@@ -22,6 +22,7 @@
+ #define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
+ #define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
+ 
++#define CONFIG_SYS_NAND_SIZE		(128 * 1024 * 1024)
+ #define CONFIG_SYS_NAND_PAGE_COUNT	64
+ #define CONFIG_SYS_NAND_PAGE_SIZE	2048
+ #define CONFIG_SYS_NAND_OOBSIZE		64
+@@ -44,7 +45,7 @@
+ #define CONFIG_LZO
+ 
+ /* Environment */
+-#if defined(CONFIG_SYS_BOOT_NANDSPL)
++#if defined(CONFIG_SYS_BOOT_NANDSPL) || defined(CONFIG_SYS_BOOT_NANDTPL)
+ #define CONFIG_ENV_IS_IN_NAND
+ #define CONFIG_ENV_OVERWRITE
+ #define CONFIG_ENV_OFFSET		(256 * 1024)
+@@ -70,7 +71,7 @@
+ #include "openwrt-lantiq-common.h"
+ 
+ #define CONFIG_ENV_UPDATE_UBOOT_NAND					\
+-	"update-uboot-nand=run load-uboot-nandspl-lzo write-uboot-nand\0"
++	"update-uboot-nand=run load-uboot-nandtpl-lzo write-uboot-nand\0"
+ 
+ #define CONFIG_EXTRA_ENV_SETTINGS	\
+ 	CONFIG_ENV_LANTIQ_DEFAULTS	\
+-- 
+2.7.4
+
