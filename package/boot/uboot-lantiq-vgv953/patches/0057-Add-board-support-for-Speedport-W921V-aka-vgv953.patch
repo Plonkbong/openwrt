@@ -1,0 +1,450 @@
+From 87171de4d884cfff0b7b9403253f94892c9c9af3 Mon Sep 17 00:00:00 2001
+From: Burlacu Cornel <rodycor@yahoo.com>
+Date: Sun, 26 Jul 2015 21:36:49 +0300
+Subject: Add board support for Speedport W921V - aka vgv953
+
+
+diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.bin.lzma b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.bin.lzma
+new file mode 100644
+index 0000000..db09561
+Binary files /dev/null and b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.bin.lzma differ
+diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.blob b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.blob
+deleted file mode 100644
+index cdf3d30..0000000
+Binary files a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a1x.blob and /dev/null differ
+diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.bin.lzma b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.bin.lzma
+new file mode 100644
+index 0000000..a66c949
+Binary files /dev/null and b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.bin.lzma differ
+diff --git a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.blob b/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.blob
+deleted file mode 100644
+index 1559081..0000000
+Binary files a/arch/mips/cpu/mips32/vrx200/fw_phy11g_a2x.blob and /dev/null differ
+diff --git a/arch/mips/cpu/mips32/vrx200/gphy.c b/arch/mips/cpu/mips32/vrx200/gphy.c
+index 269ca5d..5f7af94 100644
+--- a/arch/mips/cpu/mips32/vrx200/gphy.c
++++ b/arch/mips/cpu/mips32/vrx200/gphy.c
+@@ -1,7 +1,8 @@
+ /*
+- * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ * This file is released under the terms of GPL v2 and any later version.
++ * See the file COPYING in the root directory of the source tree for details.
+  *
+- * SPDX-License-Identifier:	GPL-2.0+
++ * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
+  */
+ 
+ #include <common.h>
+@@ -9,6 +10,10 @@
+ #include <asm/arch/soc.h>
+ #include <asm/arch/gphy.h>
+ 
++#include <lzma/LzmaTypes.h>
++#include <lzma/LzmaDec.h>
++#include <lzma/LzmaTools.h>
++
+ static inline void ltq_gphy_copy(const void *fw_start, const void *fw_end,
+ 				ulong dst_addr)
+ {
+@@ -18,7 +23,12 @@ static inline void ltq_gphy_copy(const void *fw_start, const void *fw_end,
+ 	debug("ltq_gphy_copy: addr %08lx, fw_start %p, fw_end %p\n",
+ 		addr, fw_start, fw_end);
+ 
+-	memcpy((void *) addr, fw_start, fw_len);
++	SizeT lzma_len = 65536;
++	int ret = lzmaBuffToBuffDecompress(
++	(unsigned char *)addr, &lzma_len,
++	(unsigned char *)fw_start, fw_len);
++
++	//memcpy((void *) addr, fw_start, fw_len);
+ }
+ 
+ void ltq_gphy_phy11g_a1x_load(ulong addr)
+diff --git a/arch/mips/cpu/mips32/vrx200/gphy_fw.S b/arch/mips/cpu/mips32/vrx200/gphy_fw.S
+index 3a0417a..b7e8c3f 100644
+--- a/arch/mips/cpu/mips32/vrx200/gphy_fw.S
++++ b/arch/mips/cpu/mips32/vrx200/gphy_fw.S
+@@ -1,19 +1,20 @@
+ /*
+- * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ * This file is released under the terms of GPL v2 and any later version.
++ * See the file COPYING in the root directory of the source tree for details.
+  *
+- * SPDX-License-Identifier:	GPL-2.0+
++ * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
+  */
+ 
+ #include <asm/asm.h>
+ 
+ 	.section .rodata.__ltq_fw_phy11g_a1x
+ EXPORT(__ltq_fw_phy11g_a1x_start)
+-	.incbin "fw_phy11g_a1x.blob"
++	.incbin "fw_phy11g_a1x.bin.lzma"
+ EXPORT(__ltq_fw_phy11g_a1x_end)
+ 
+ 	.section .rodata.__ltq_fw_phy11g_a2x
+ EXPORT(__ltq_fw_phy11g_a2x_start)
+-	.incbin "fw_phy11g_a2x.blob"
++	.incbin "fw_phy11g_a2x.bin.lzma"
+ EXPORT(__ltq_fw_phy11g_a2x_end)
+ 
+ 	.section .rodata.__ltq_fw_phy22f_a1x
+diff --git a/arch/mips/include/asm/lantiq/config.h b/arch/mips/include/asm/lantiq/config.h
+index bcc7b61..012f458 100644
+--- a/arch/mips/include/asm/lantiq/config.h
++++ b/arch/mips/include/asm/lantiq/config.h
+@@ -56,9 +56,16 @@
+ #define CONFIG_SPL_NAND_SOFTECC
+ #define CONFIG_SYS_NAND_ECCSIZE		256
+ #define CONFIG_SYS_NAND_ECCBYTES	3
+-#define CONFIG_SYS_NAND_ECCPOS		{40, 41, 42, 43, 44, 45, 46, 47, \
++#define CONFIG_SYS_NAND_ECCPOS		{0, 1, 2, 3, 6, 7, \
++					40, 41, 42, 43, 44, 45, 46, 47, \
+ 					48, 49, 50, 51, 52, 53, 54, 55, \
+-					56, 57, 58, 59, 60, 61, 62, 63}
++					56, 57, 58, 59, 60, 61, 62, 63, \
++					80, 81, 82, 83, 84, 85, 86, 87, \
++					88, 89, 90, 91, 92, 93, 94, 95, \
++					96, 97, 98, 99, 100, 101, 102, 103, \
++					104, 105, 106, 107, 108, 109, 110, 111, \
++					112, 113, 114, 115, 116, 117, 118, 119, \
++					120, 121, 122, 123, 124, 125, 126, 127}
+ #endif
+ 
+ #if defined(CONFIG_LTQ_SUPPORT_SPL_NOR_FLASH) && defined(CONFIG_SYS_BOOT_NORSPL)
+diff --git a/board/arcadyan/vgv953/Makefile b/board/arcadyan/vgv953/Makefile
+new file mode 100644
+index 0000000..3a547c2
+--- /dev/null
++++ b/board/arcadyan/vgv953/Makefile
+@@ -0,0 +1,27 @@
++#
++# Copyright (C) 2000-2011 Wolfgang Denk, DENX Software Engineering, wd@denx.de
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).o
++
++COBJS	= $(BOARD).o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(call cmd_link_o_target, $(OBJS) $(SOBJS))
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+diff --git a/board/arcadyan/vgv953/config.mk b/board/arcadyan/vgv953/config.mk
+new file mode 100644
+index 0000000..9d33739
+--- /dev/null
++++ b/board/arcadyan/vgv953/config.mk
+@@ -0,0 +1,7 @@
++#
++# Copyright (C) 2012-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++#
++# SPDX-License-Identifier:	GPL-2.0+
++#
++
++PLATFORM_CPPFLAGS += -I$(TOPDIR)/board/$(BOARDDIR)
+diff --git a/board/arcadyan/vgv953/ddr_settings.h b/board/arcadyan/vgv953/ddr_settings.h
+new file mode 100644
+index 0000000..fd1274c
+--- /dev/null
++++ b/board/arcadyan/vgv953/ddr_settings.h
+@@ -0,0 +1,69 @@
++/*
++ * Copyright (C) 2007-2010 Lantiq Deutschland GmbH
++ * Copyright (C) 2011-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#define	MC_CCR00_VALUE	0x101
++#define	MC_CCR01_VALUE	0x1000100
++#define	MC_CCR02_VALUE	0x1010000
++#define	MC_CCR03_VALUE	0x101
++#define	MC_CCR04_VALUE	0x1000000
++#define	MC_CCR05_VALUE	0x1000101
++#define	MC_CCR06_VALUE	0x1000100
++#define	MC_CCR07_VALUE	0x1010000
++#define	MC_CCR08_VALUE	0x1000101
++#define	MC_CCR09_VALUE	0x0
++#define	MC_CCR10_VALUE	0x2000100
++#define	MC_CCR11_VALUE	0x2000300
++#define	MC_CCR12_VALUE	0x30000
++#define	MC_CCR13_VALUE	0x202
++#define	MC_CCR14_VALUE	0x7080A0F
++#define	MC_CCR15_VALUE	0x2040F
++#define	MC_CCR16_VALUE	0x40000
++#define	MC_CCR17_VALUE	0x70102
++#define	MC_CCR18_VALUE	0x4020002
++#define	MC_CCR19_VALUE	0x30302
++#define	MC_CCR20_VALUE	0x8000700
++#define	MC_CCR21_VALUE	0x40F020A
++#define	MC_CCR22_VALUE	0x0
++#define	MC_CCR23_VALUE	0xC020000
++#define	MC_CCR24_VALUE	0x4401B04
++#define	MC_CCR25_VALUE	0x0
++#define	MC_CCR26_VALUE	0x0
++#define	MC_CCR27_VALUE	0x6420000
++#define	MC_CCR28_VALUE	0x0
++#define	MC_CCR29_VALUE	0x0
++#define	MC_CCR30_VALUE	0x798
++#define	MC_CCR31_VALUE	0x0
++#define	MC_CCR32_VALUE	0x0
++#define	MC_CCR33_VALUE	0x650000
++#define	MC_CCR34_VALUE	0x200C8
++#define	MC_CCR35_VALUE	0x1D445D
++#define	MC_CCR36_VALUE	0xC8
++#define	MC_CCR37_VALUE	0xC351
++#define	MC_CCR38_VALUE	0x0
++#define	MC_CCR39_VALUE	0x141F04
++#define	MC_CCR40_VALUE	0x142704
++#define	MC_CCR41_VALUE	0x141B42
++#define	MC_CCR42_VALUE	0x141B42
++#define	MC_CCR43_VALUE	0x566504
++#define	MC_CCR44_VALUE	0x566504
++#define	MC_CCR45_VALUE	0x565F17
++#define	MC_CCR46_VALUE	0x565F17
++#define	MC_CCR47_VALUE	0x0
++#define	MC_CCR48_VALUE	0x0
++#define	MC_CCR49_VALUE	0x0
++#define	MC_CCR50_VALUE	0x0
++#define	MC_CCR51_VALUE	0x0
++#define	MC_CCR52_VALUE	0x133
++#define	MC_CCR53_VALUE	0xF3014B27
++#define	MC_CCR54_VALUE	0xF3014B27
++#define	MC_CCR55_VALUE	0xF3014B27
++#define	MC_CCR56_VALUE	0xF3014B27
++#define	MC_CCR57_VALUE	0x7800301
++#define	MC_CCR58_VALUE	0x7800301
++#define	MC_CCR59_VALUE	0x7800301
++#define	MC_CCR60_VALUE	0x7800301
++#define	MC_CCR61_VALUE	0x4
+diff --git a/board/arcadyan/vgv953/vgv953.c b/board/arcadyan/vgv953/vgv953.c
+new file mode 100644
+index 0000000..37b8403
+--- /dev/null
++++ b/board/arcadyan/vgv953/vgv953.c
+@@ -0,0 +1,103 @@
++/*
++ * Copyright (C) 2012-2013 Daniel Schwierzeck, daniel.schwierzeck@gmail.com
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#include <common.h>
++#include <asm/gpio.h>
++#include <asm/lantiq/eth.h>
++#include <asm/lantiq/chipid.h>
++#include <asm/lantiq/cpu.h>
++#include <asm/arch/gphy.h>
++
++#if defined(CONFIG_SPL_BUILD)
++#define do_gpio_init	1
++#define do_pll_init	1
++#define do_dcdc_init	0
++#elif defined(CONFIG_SYS_BOOT_RAM)
++#define do_gpio_init	1
++#define do_pll_init	0
++#define do_dcdc_init	1
++#else
++#define do_gpio_init	0
++#define do_pll_init	0
++#define do_dcdc_init	1
++#endif
++
++static void gpio_init(void)
++{
++	/* EBU.FL_CS1 as output for NAND CE */
++	gpio_set_altfunc(23, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_OUT);
++	/* EBU.FL_A23 as output for NAND CLE */
++	gpio_set_altfunc(24, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_OUT);
++	/* EBU.FL_A24 as output for NAND ALE */
++	gpio_set_altfunc(13, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_OUT);
++	/* GPIO 3.0 as input for NAND Ready Busy */
++	gpio_set_altfunc(48, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_IN);
++	/* GPIO 3.1 as output for NAND Read */
++	gpio_set_altfunc(49, GPIO_ALTSEL_SET, GPIO_ALTSEL_CLR, GPIO_DIR_OUT);
++}
++
++int board_early_init_f(void)
++{
++	if (do_gpio_init)
++		gpio_init();
++
++	if (do_pll_init)
++		ltq_pll_init();
++
++	if (do_dcdc_init)
++		ltq_dcdc_init(0x7F);
++
++	return 0;
++}
++
++int checkboard(void)
++{
++	puts("Board: " CONFIG_BOARD_NAME "\n");
++	ltq_chip_print_info();
++
++	return 0;
++}
++
++static const struct ltq_eth_port_config eth_port_config[] = {
++	/* GMAC0: external Lantiq PEF7071 10/100/1000 PHY for LAN port 0 */
++	{ 0, 0x0, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII },
++	/* GMAC1: external Lantiq PEF7071 10/100/1000 PHY for LAN port 1 */
++	{ 1, 0x1, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_RGMII },
++	/* GMAC2: internal GPHY0 with 10/100/1000 firmware for LAN port 2 */
++	{ 2, 0x11, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_GMII },
++	/* GMAC3: unused */
++	{ 3, 0x0, LTQ_ETH_PORT_NONE, PHY_INTERFACE_MODE_NONE },
++	/* GMAC4: internal GPHY1 with 10/100/1000 firmware for LAN port 3 */
++	{ 4, 0x13, LTQ_ETH_PORT_PHY, PHY_INTERFACE_MODE_GMII },
++};
++
++static const struct ltq_eth_board_config eth_board_config = {
++	.ports = eth_port_config,
++	.num_ports = ARRAY_SIZE(eth_port_config),
++};
++
++int board_eth_init(bd_t * bis)
++{
++	const enum ltq_gphy_clk clk = LTQ_GPHY_CLK_25MHZ_PLL0;
++	const ulong fw_addr = 0x80FF0000;
++
++	switch ( ltq_chip_version_get() ) {
++
++		case 1:
++			ltq_gphy_phy11g_a1x_load(fw_addr);
++			break;
++		case 2:
++			ltq_gphy_phy11g_a2x_load(fw_addr);
++			break;
++	}
++
++	ltq_cgu_gphy_clk_src(clk);
++
++	ltq_rcu_gphy_boot(0, fw_addr);
++	ltq_rcu_gphy_boot(1, fw_addr);
++
++	return ltq_eth_initialize(&eth_board_config);
++}
+diff --git a/boards.cfg b/boards.cfg
+index e7f3396..5392edb 100644
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -545,6 +545,8 @@ Active  mips        mips32         incaip      -               incaip
+ Active  mips        mips32         incaip      -               incaip              incaip_133MHz                        incaip:CPU_CLOCK_RATE=133000000                                                                                                   Wolfgang Denk <wd@denx.de>
+ Active  mips        mips32         incaip      -               incaip              incaip_150MHz                        incaip:CPU_CLOCK_RATE=150000000                                                                                                   Wolfgang Denk <wd@denx.de>
+ Active  mips        mips32         vrx200      arcadyan        easybox904          easybox904_ram                       easybox904:SYS_BOOT_RAM                                                                                                           Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
++Active  mips        mips32         vrx200      arcadyan        vgv953              vgv953_ram                       vgv953:SYS_BOOT_RAM                                                                                                             Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
++Active  mips        mips32         vrx200      arcadyan        vgv953              vgv953_nandtpl                       vgv953:SYS_BOOT_NANDTPL                                                                                                           Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         vrx200      avm             fb3370              fb3370_eva                           fb3370:SYS_BOOT_EVA                                                                                                               Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         vrx200      avm             fb3370              fb3370_ram                           fb3370:SYS_BOOT_RAM                                                                                                               Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         vrx200      avm             fb3370              fb3370_sfspl                         fb3370:SYS_BOOT_SFSPL                                                                                                             Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+diff --git a/include/configs/vgv953.h b/include/configs/vgv953.h
+new file mode 100644
+index 0000000..e807999
+--- /dev/null
++++ b/include/configs/vgv953.h
+@@ -0,0 +1,84 @@
++/*
++ * Copyright (C) 2013 Luka Perkov <luka@openwrt.org>
++ *
++ * SPDX-License-Identifier:	GPL-2.0+
++ */
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#define CONFIG_MACH_TYPE	"VGV953"
++#define CONFIG_IDENT_STRING	" "CONFIG_MACH_TYPE
++#define CONFIG_BOARD_NAME	"SPEEDPORT W921V"
++
++/* Configure SoC */
++#define CONFIG_LTQ_SUPPORT_UART			/* Enable ASC and UART */
++
++#define CONFIG_LTQ_SUPPORT_ETHERNET		/* Enable ethernet */
++
++#define CONFIG_LTQ_SUPPORT_NAND_FLASH		/* Have a ST-MICRO NAND256W3A flash */
++
++#define CONFIG_LTQ_SUPPORT_SPL_NAND_FLASH	/* Build NAND flash SPL */
++#define CONFIG_LTQ_SPL_COMP_LZO			/* Compress SPL with LZO */
++#define CONFIG_LTQ_SPL_CONSOLE			/* Enable SPL console */
++
++
++/* Configure Nand */
++#define CONFIG_SYS_NAND_SIZE		(32 * 1024 * 1024)
++#define CONFIG_SYS_NAND_PAGE_COUNT	32
++#define CONFIG_SYS_NAND_PAGE_SIZE	512
++#define CONFIG_SYS_NAND_OOBSIZE		16
++#define CONFIG_SYS_NAND_BLOCK_SIZE	(16 * 1024)
++#define CONFIG_SYS_NAND_BAD_BLOCK_POS	NAND_SMALL_BADBLOCK_POS
++#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x4000
++
++#define CONFIG_SYS_DRAM_PROBE
++
++#define CONFIG_SPL_TEXT_BASE		0xBE220200
++
++/* UBI */
++#define MTDIDS_DEFAULT			"nand0=nand"
++#define MTDPARTS_DEFAULT		"mtdparts=nand:256k(uboot),128k(uboot_env);"
++
++#define CONFIG_CMD_UBI
++#define CONFIG_CMD_UBIFS
++#define CONFIG_RBTREE
++#define CONFIG_MTD_DEVICE
++#define CONFIG_MTD_PARTITIONS
++#define CONFIG_CMD_MTDPARTS
++#define CONFIG_LZO
++
++/* Environment */
++#if defined(CONFIG_SYS_BOOT_NANDSPL) || defined(CONFIG_SYS_BOOT_NANDTPL)
++#define CONFIG_ENV_IS_IN_NAND
++#define CONFIG_ENV_OVERWRITE
++#define CONFIG_ENV_OFFSET		(256 * 1024)
++#define CONFIG_ENV_SECT_SIZE		(128 * 1024)
++#else
++#define CONFIG_ENV_IS_NOWHERE
++#endif
++
++#define CONFIG_ENV_SIZE			(8 * 1024)
++#define CONFIG_LOADADDR			CONFIG_SYS_LOAD_ADDR
++
++/* Console */
++#define CONFIG_LTQ_ADVANCED_CONSOLE
++#define CONFIG_BAUDRATE			115200
++#define CONFIG_CONSOLE_ASC		1
++#define CONFIG_CONSOLE_DEV		"ttyLTQ1"
++
++/* Pull in default board configs for Lantiq XWAY VRX200 */
++#include <asm/lantiq/config.h>
++#include <asm/arch/config.h>
++
++/* Pull in default OpenWrt configs for Lantiq SoC */
++#include "openwrt-lantiq-common.h"
++
++#define CONFIG_ENV_UPDATE_UBOOT_NAND					\
++	"update-uboot-nand=run load-uboot-nandtpl-lzo write-uboot-nand\0"
++
++#define CONFIG_EXTRA_ENV_SETTINGS	\
++	CONFIG_ENV_LANTIQ_DEFAULTS	\
++	CONFIG_ENV_UPDATE_UBOOT_NAND
++
++#endif /* __CONFIG_H */
+-- 
+2.7.4
+

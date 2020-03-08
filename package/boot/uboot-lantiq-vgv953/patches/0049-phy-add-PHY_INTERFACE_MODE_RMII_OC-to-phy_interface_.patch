@@ -1,0 +1,33 @@
+From 34afaefcdd3611d5c70929df5f820704663f9475 Mon Sep 17 00:00:00 2001
+From: Antonios Vamporakis <ant@area128.com>
+Date: Fri, 3 Jan 2014 18:28:56 +0100
+Subject: phy: add PHY_INTERFACE_MODE_RMII_OC to phy_interface_t
+
+Lantiq SoCs can generate clock for RMII peripherals. This adds
+the option to start such output clock while the RMII is set up.
+
+Signed-off-by: Antonios Vamporakis <ant@area128.com>
+
+diff --git a/include/phy.h b/include/phy.h
+index 818bd7f..3e08cd8 100644
+--- a/include/phy.h
++++ b/include/phy.h
+@@ -42,6 +42,7 @@ typedef enum {
+ 	PHY_INTERFACE_MODE_QSGMII,
+ 	PHY_INTERFACE_MODE_TBI,
+ 	PHY_INTERFACE_MODE_RMII,
++	PHY_INTERFACE_MODE_RMII_OC,
+ 	PHY_INTERFACE_MODE_RGMII,
+ 	PHY_INTERFACE_MODE_RGMII_ID,
+ 	PHY_INTERFACE_MODE_RGMII_RXID,
+@@ -58,6 +59,7 @@ static const char *phy_interface_strings[] = {
+ 	[PHY_INTERFACE_MODE_QSGMII]		= "qsgmii",
+ 	[PHY_INTERFACE_MODE_TBI]		= "tbi",
+ 	[PHY_INTERFACE_MODE_RMII]		= "rmii",
++	[PHY_INTERFACE_MODE_RMII_OC]		= "rmii-oc",
+ 	[PHY_INTERFACE_MODE_RGMII]		= "rgmii",
+ 	[PHY_INTERFACE_MODE_RGMII_ID]		= "rgmii-id",
+ 	[PHY_INTERFACE_MODE_RGMII_RXID]		= "rgmii-rxid",
+-- 
+2.7.4
+
