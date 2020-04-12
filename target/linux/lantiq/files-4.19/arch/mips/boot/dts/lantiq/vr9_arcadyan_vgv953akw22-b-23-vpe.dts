@@ -12,3 +12,8 @@
 	};
 };
 
+&vmmc {
+	status = "okay";
+	gpios = <&gpio 37 GPIO_ACTIVE_HIGH>; /* reset_slic! */
+};
+
