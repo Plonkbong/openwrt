@@ -25,4 +25,4 @@ config LANTIQ_UBOOT_ar10
 	depends on ( TARGET_ltqcpe_platform_ar10 || TARGET_ifxcpe_platform_ar10 )
 
 
-source scripts_platform/Kconfig
+source "scripts_platform/Kconfig"

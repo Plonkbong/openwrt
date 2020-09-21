@@ -444,23 +444,23 @@ config UBOOT_CONFIG_OVERLAY
 	 depends on UBOOT_CONFIG_DRIVER_VR9 || UBOOT_CONFIG_DRIVER_AR9 || UBOOT_CONFIG_DRIVER_DANUBE
 
 if LANTIQ_UBOOT_ar9
-   source ../board/ar9/Kconfig
+   source "../board/ar9/Kconfig"
 endif
 
 if LANTIQ_UBOOT_danube
-   source ../board/danube/Kconfig
+   source "../board/danube/Kconfig"
 endif
 
 if LANTIQ_UBOOT_amazon_se
-   source ../board/amazon_se/Kconfig
+   source "../board/amazon_se/Kconfig"
 endif
 
 if LANTIQ_UBOOT_vr9
-   source ../board/vr9/Kconfig
+   source "../board/vr9/Kconfig"
 endif
 
 if LANTIQ_UBOOT_ar10
-   source ../board/ar10/Kconfig
+   source "../board/ar10/Kconfig"
 endif
    
 
@@ -938,5 +938,5 @@ endif
 
 endmenu
 
-source ../lib/Kconfig
-source ../common/Kconfig
+source "../lib/Kconfig"
+source "../common/Kconfig"
