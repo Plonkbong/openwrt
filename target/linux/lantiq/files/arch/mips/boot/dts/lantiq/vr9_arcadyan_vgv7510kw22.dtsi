@@ -6,9 +6,6 @@
 / {
 	compatible = "arcadyan,vgv7510kw22", "lantiq,xway", "lantiq,vr9";
 
-	chosen {
-		bootargs = "console=ttyLTQ0,115200 mem=62M vpe1_load_addr=0x83e00000 vpe1_mem=2M maxvpes=1 maxtcs=1 nosmp";
-	};
 
 	aliases {
 		led-boot = &power_green;
@@ -250,9 +247,3 @@
 	vbus-supply = <&usb_vbus>;
 };
 
-&vmmc {
-	status = "okay";
-	gpios = <&gpio 30 GPIO_ACTIVE_HIGH  //fxs relay
-			 &gpio 31 GPIO_ACTIVE_HIGH  //still unknown
-			 &gpio 3  GPIO_ACTIVE_HIGH>; //reset_slic?
-};

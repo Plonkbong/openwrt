@@ -48,18 +48,31 @@ define Device/arcadyan_vgv7510kw22-brn
 endef
 TARGET_DEVICES += arcadyan_vgv7510kw22-brn
 
+	
 define Device/arcadyan_vgv7510kw22-nor
   DEVICE_VENDOR := Arcadyan
   DEVICE_MODEL := VGV7510KW22
-  DEVICE_VARIANT := NOR
   DEVICE_ALT0_VENDOR := o2
   DEVICE_ALT0_MODEL := Box 6431
-  DEVICE_ALT0_VARIANT := NOR
   IMAGE_SIZE := 15232k
-  DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic-wolfssl kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc
-  SUPPORTED_DEVICES += VGV7510KW22NOR
 endef
-TARGET_DEVICES += arcadyan_vgv7510kw22-nor
+
+define Device/arcadyan_vgv7510kw22-nor-smp
+$(Device/arcadyan_vgv7510kw22-nor)
+  DEVICE_VARIANT := NOR-SMP
+  DEVICE_ALT0_VARIANT := NOR-SMP
+  DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic kmod-usb-dwc2
+endef
+TARGET_DEVICES += arcadyan_vgv7510kw22-nor-smp
+
+define Device/arcadyan_vgv7510kw22-nor-vpe
+$(Device/arcadyan_vgv7510kw22-nor)
+  DEVICE_VARIANT := NOR-VPE
+  DEVICE_ALT0_VARIANT := NOR-VPE
+  DEVICE_PACKAGES := kmod-rt2800-pci wpad-basic kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc
+endef
+TARGET_DEVICES += arcadyan_vgv7510kw22-nor-vpe
+
 
 define Device/arcadyan_vgv7519-brn
   $(Device/lantiqBrnImage)
