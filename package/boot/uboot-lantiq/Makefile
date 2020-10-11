@@ -335,7 +335,7 @@ endef
 define U-Boot/vgv953akw22_ram
   NAME:=Speedport W 921V (RAM)
   BUILD_SUBTARGET:=xrx200
-  BUILD_DEVICES:=arcadyan_vgv953akw22
+  BUILD_DEVICES:=arcadyan_vgv953akw22-b-23-smp arcadyan_vgv953akw22-b-23-vpe
 #  DDR_SETTINGS:=board/arcadyan/vgv953akw22/ddr_settings.h
   DDR_SETTINGS:=board/bt/bthomehubv5a/ddr_settings.h
 endef
